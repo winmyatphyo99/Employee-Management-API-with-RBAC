@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\LoginRequest;
 use App\Services\AuthService;
 use Illuminate\Http\Request;
+use App\Http\Resources\UserResource;
 
-class AuthController extends Controller
+class AuthController extends BaseApiController
 {
     protected AuthService $authService;
 
@@ -21,39 +21,36 @@ class AuthController extends Controller
     {
         $data = $this->authService->register($request->validated());
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User registered successfully',
-            'data' => $data
-        ], 201);
+        return $this->successResponse([
+            'user' => new UserResource($data['user']),
+            'token' => $data['token'],
+        ], 'User registered successfully.', 201);
     }
 
     public function login(LoginRequest $request)
     {
         $data = $this->authService->login($request->validated());
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Login successful',
-            'data' => $data
-        ]);
+        return $this->successResponse([
+            'user' => new UserResource($data['user']),
+            'token' => $data['token'],
+        ], 'Login successful.');
     }
 
     public function logout(Request $request)
     {
         $this->authService->logout($request->user());
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Logout successful'
-        ]);
+        return $this->successResponse(
+            null,
+            'Logout successful.'
+        );
     }
 
     public function me(Request $request)
     {
-        return response()->json([
-            'success' => true,
-            'data' => $request->user()
-        ]);
+        return $this->successResponse(
+            new UserResource($request->user()->load('roles'))
+        );
     }
 }

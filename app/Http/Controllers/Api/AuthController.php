@@ -10,47 +10,42 @@ use App\Http\Resources\UserResource;
 
 class AuthController extends BaseApiController
 {
-    protected AuthService $authService;
-
-    public function __construct(AuthService $authService)
-    {
-        $this->authService = $authService;
-    }
+    public function __construct(
+        protected AuthService $authService
+    ) {}
 
     public function register(RegisterRequest $request)
     {
-        $data = $this->authService->register($request->validated());
+        $result = $this->authService->register($request->validated());
 
-        return $this->successResponse([
-            'user' => new UserResource($data['user']),
-            'token' => $data['token'],
-        ], 'User registered successfully.', 201);
+        return $this->created([
+            'user'  => UserResource::make($result->user),
+            'token' => $result->token,
+        ], 'User registered successfully');
     }
 
     public function login(LoginRequest $request)
     {
-        $data = $this->authService->login($request->validated());
+        $result = $this->authService->login($request->validated());
 
-        return $this->successResponse([
-            'user' => new UserResource($data['user']),
-            'token' => $data['token'],
-        ], 'Login successful.');
+        return $this->success([
+            'user'  => UserResource::make($result->user),
+            'token' => $result->token,
+        ], 'Login successful');
     }
 
     public function logout(Request $request)
     {
         $this->authService->logout($request->user());
 
-        return $this->successResponse(
-            null,
-            'Logout successful.'
-        );
+        return $this->success(null, 'Logout successful');
     }
 
     public function me(Request $request)
     {
-        return $this->successResponse(
-            new UserResource($request->user()->load('roles'))
+        return $this->success(
+            UserResource::make($request->user()->load('roles')),
+            'User profile fetched successfully'
         );
     }
 }
